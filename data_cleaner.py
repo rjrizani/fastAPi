@@ -45,5 +45,5 @@ def remove_text(file_path, text_to_remove):
 
 if __name__ == "__main__":
     file_path = "articles_5.json"
-    text_to_remove = "\n--\nIf you liked this story,sign up for The Essential List newsletter– a handpicked selection of features, videos and can't-miss news, delivered to your inbox twice a week.\nFor more Travel stories from the BBC, follow us onFacebook,XandInstagram.\n"
+    text_to_remove = " "
     remove_text(file_path, text_to_remove)
