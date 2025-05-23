@@ -21,3 +21,15 @@ def get_article(index: int):
     if 0 <= index < len(articles_data):
         return JSONResponse(content=articles_data[index])
     return {"error": "Article not found"}
+
+#add post data content and title
+@app.post("/articles")
+def create_article(article: dict):
+    if "title" not in article or "content" not in article:
+        return JSONResponse(status_code=400, content={"error": "Title and content are required"})
+    
+    articles_data.append(article)
+    with open("articles_5.json", "w", encoding="utf-8") as f:
+        json.dump(articles_data, f, ensure_ascii=False, indent=4)
+    
+    return JSONResponse(status_code=201, content=article)
