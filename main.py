@@ -44,6 +44,10 @@ async def load_data_from_json(filename: str = "articles_5.json"):
         raise HTTPException(status_code=404, detail=f"File not found: {filename}")
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail=f"Invalid JSON format in file: {filename}")
+    
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Articles API"}
 @app.post("/articles/")
 async def create_articles():
     """Inserts all articles from the JSON file into the database."""
