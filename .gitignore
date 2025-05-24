@@ -3,3 +3,4 @@
 
 # Ignore Python compiled bytecode directory
 __pycache__/
+.env
