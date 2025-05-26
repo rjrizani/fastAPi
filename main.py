@@ -2,6 +2,11 @@ from fastapi import FastAPI, HTTPException
 import asyncpg
 import os, sys
 import json
+from pydantic import BaseModel
+
+class ArticleIn(BaseModel):
+    title: str
+    content: str
 
 # Ambil kredensial dari environment variables (atau cara lain yang aman)
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
@@ -94,3 +99,41 @@ async def read_article(article_id: int):
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
     finally:
         await app.state.pool.release(conn)
+
+#add one post data content and title
+
+@app.post("/one-article/")
+async def create_article(article: ArticleIn):
+    """Inserts a new article into the database."""
+    conn = await app.state.pool.acquire()
+    try:
+        await conn.execute(
+            "INSERT INTO articles (title, content) VALUES ($1, $2)",
+            article.title,
+            article.content
+        )
+        return {"message": "Article created successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+    finally:
+        await app.state.pool.release(conn)
+
+#add more data to db
+@app.post("/add-more-data/")
+async def add_more_data():
+    """Adds more data to the database from a JSON file."""
+    data = await load_data_from_json("articles_5.json")
+    conn = await app.state.pool.acquire()
+    try:
+        for article in data:
+            await conn.execute(
+                "INSERT INTO articles (title, content) VALUES ($1, $2)",
+                article["title"],
+                article["content"]
+            )
+        return {"message": "More data added successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+    finally:
+        await app.state.pool.release(conn)
+
