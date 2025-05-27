@@ -143,7 +143,7 @@ async def add_more_data():
 
 
 #find article by title matching
-@app.get("/articles/search/")
+@app.get("/articles/search/{title}")
 async def search_articles(title: str):
     """Searches for articles by title."""
     conn = await app.state.pool.acquire()
