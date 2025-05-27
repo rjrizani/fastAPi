@@ -21,8 +21,12 @@ DATABASE_URL = f"postgresql://postgres.invcmkrnevoihlyxitdg:{DB_PASSWORD}@aws-0-
 app = FastAPI()
 
 async def create_db_pool():
-    app.state.pool = await asyncpg.create_pool(DATABASE_URL, min_size=5, max_size=20)
-
+    app.state.pool = await asyncpg.create_pool(
+        DATABASE_URL,
+        min_size=5,
+        max_size=20,
+        statement_cache_size=0  # <-- Add this line
+    )
 async def close_db_pool():
     await app.state.pool.close()
 
@@ -137,3 +141,54 @@ async def add_more_data():
     finally:
         await app.state.pool.release(conn)
 
+
+#find article by title matching
+@app.get("/articles/search/")
+async def search_articles(title: str):
+    """Searches for articles by title."""
+    conn = await app.state.pool.acquire()
+    try:
+        rows = await conn.fetch("SELECT id, title, content FROM articles WHERE title ILIKE $1", f"%{title}%")
+        if not rows:
+            raise HTTPException(status_code=404, detail="No articles found with that title")
+        articles = [{"id": row["id"], "title": row["title"], "content": row["content"]} for row in rows]
+        return articles
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+    finally:
+        await app.state.pool.release(conn)
+
+#delete article by id
+@app.delete("/articles/{article_id}")
+async def delete_article(article_id: int):
+    """Deletes an article by ID."""
+    conn = await app.state.pool.acquire()
+    try:
+        result = await conn.execute("DELETE FROM articles WHERE id = $1", article_id)
+        if result == "DELETE 0":
+            raise HTTPException(status_code=404, detail="Article not found")
+        return {"message": "Article deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+    finally:
+        await app.state.pool.release(conn)
+
+#update article by id
+@app.put("/articles/{article_id}")
+async def update_article(article_id: int, article: ArticleIn):
+    """Updates an article by ID."""
+    conn = await app.state.pool.acquire()
+    try:
+        result = await conn.execute(
+            "UPDATE articles SET title = $1, content = $2 WHERE id = $3",
+            article.title,
+            article.content,
+            article_id
+        )
+        if result == "UPDATE 0":
+            raise HTTPException(status_code=404, detail="Article not found")
+        return {"message": "Article updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+    finally:
+        await app.state.pool.release(conn)
